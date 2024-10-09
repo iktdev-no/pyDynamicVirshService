@@ -11,7 +11,7 @@ import libvirt
 from libvirt import virConnect, virDomain
 from .virshClient import VirshClient, VirshVM, VMStates
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 class DynamicVirshService:
     qemu_address: str
@@ -49,11 +49,13 @@ class DynamicVirshService:
         self.virshClient = VirshClient(self.qemu_address, self.__virsh_state_update)
 
     def is_excluded(self, name: str) -> bool:
-        if (name.lower() in (excl.lower() for excl in self.qemu_excluded_vms)):
-            logging.info(f"VM {name} is excluded")
-            return True
-        else:
-            return False
+        for excludedName in self.qemu_excluded_vms:
+            if (excludedName.strip().lower() == name.strip().lower()):
+                logging.info(f"VM {name} is excluded")
+                return True
+            else:
+                logging.debug(f"VM: {name} does not match excluded: {excludedName}")
+        return False
 
     def start(self) -> None:
         if (self.mqtt_password is not None):
