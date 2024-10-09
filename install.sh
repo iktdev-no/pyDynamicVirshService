@@ -182,10 +182,12 @@ setup() {
 
     echo "Creating DRU Service runner"
     cat > "$install_location/service.py" <<EOL
+import signal
 from DynamicVirshService import DynamicVirshService
 config = "${install_location}/config.json"
 service = DynamicVirshService(config)
 service.start()
+signal.signal(signal.SIGINT, service.stop())
 EOL
 
 
