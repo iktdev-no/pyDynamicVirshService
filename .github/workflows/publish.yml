@@ -16,6 +16,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    - name: Install dependency
+      run: | 
+        sudo apt-get update
+        sudo apt-get -y install libvirt-dev pkg-config python3-dev
+
     - name: Set up Python 3.x
       uses: actions/setup-python@v4.7.1
       with:
