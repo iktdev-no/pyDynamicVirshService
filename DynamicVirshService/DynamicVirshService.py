@@ -43,12 +43,14 @@ class DynamicVirshService:
         qemuConfig: dict = config["qemu"]
         self.qemu_address = qemuConfig.get("address", "qemu:///system")
         self.qemu_excluded_vms = qemuConfig.get("excluded_vms", [])
+        logging.info(f"VMs in exclusion list are: {",".join(self.qemu_excluded_vms)}")
 
         self.mqttClient = mqtt.Client(client_id=self.mqtt_brooker, protocol=mqtt.MQTTv311, transport="tcp", callback_api_version=mqtt.CallbackAPIVersion.VERSION1)
         self.virshClient = VirshClient(self.qemu_address, self.__virsh_state_update)
 
-    def is_not_in_exclusion_list(self, name: str) -> bool:
-        if (name.lower() not in (excl.lower() for excl in self.qemu_excluded_vms)):
+    def is_excluded(self, name: str) -> bool:
+        if (name.lower() in (excl.lower() for excl in self.qemu_excluded_vms)):
+            logging.info(f"VM {name} is excluded")
             return True
         else:
             return False
@@ -62,7 +64,8 @@ class DynamicVirshService:
         for vm in self.virshClient.get_vms():
             self.__vms_pushed.append(vm.name)
             
-            if (self.is_not_in_exclusion_list(vm.name)):
+            if (self.is_excluded(vm.name) == False):
+                
                 hassConfig = HassConfig(mqttClient=self.mqttClient)
                 hassConfig.publish_sensor_config(name=vm.name, sensor_name=f"Status", subject="status")
                 hassConfig.publish_binary_sensor_config(name=vm.name, sensor_name=f"Powered", subject="running")
@@ -83,7 +86,7 @@ class DynamicVirshService:
         """
         Push data to mqtt
         """
-        if (self.is_not_in_exclusion_list(vmInfo.name)):
+        if (self.is_excluded(vmInfo.name) == False):
             if (vmInfo.name not in self.__vms_pushed):
                 hassConfig = HassConfig(mqttClient=self.mqttClient)
                 hassConfig.publish_sensor_config(name=vmInfo.name, sensor_name=f"{vmInfo.name} Status", subject="status")
