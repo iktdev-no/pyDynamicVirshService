@@ -24,7 +24,7 @@ class DynamicVirshService:
     mqtt_brooker_port: int
     
     mqttClient: mqtt.Client
-    virshClient: VirshClient
+    virshClient: VirshClient | None = None
     mqtt_thread_stopFlag = threading.Event()
     mqtt_thread: Thread
 
