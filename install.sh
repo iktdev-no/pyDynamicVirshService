@@ -197,7 +197,7 @@ Description=Dynamic Virsh Service
 [Service]
 Type=simple
 Restart=always
-ExecStart=${install_location}venv/bin/python -u ${install_location}/service.py
+ExecStart=${install_location}/venv/bin/python -u ${install_location}/service.py
 Environment=PYTHONUNBUFFERED=1
 
 [Install]
