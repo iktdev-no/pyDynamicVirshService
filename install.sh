@@ -134,7 +134,9 @@ generate_json_config() {
     # QEMU Input (predefined but modifiable)
     QEMU_ADDRESS=$(whiptail --inputbox "Enter QEMU Address:" 8 39 "qemu:///system" --title "QEMU Address" 3>&1 1>&2 2>&3)
 
-    if (whiptail --title "VM Name Filter" --yesno "Do you want to add VM Names to exclusion list?" 10 60); then
+
+
+    if whiptail --title "VM Name Filter" --yesno "Do you want to add VM Names to exclusion list?" 10 60; then
         manage_vm_name_filter
     fi
 
@@ -160,7 +162,7 @@ generate_json_config() {
     )
     
     # Skriv ut eller lagre JSON
-    echo "$json_output"    
+    echo "$json_output" > "$install_location/config.json"
 }
 
 
@@ -169,8 +171,7 @@ setup() {
     if [ -f "$install_location/config.json" ]; then
         echo "Using existing $install_location/config.json"
     else
-        json_output=$(generate_json_config)
-        echo "$json_output" > "$install_location/config.json"
+        generate_json_config
     fi
 
     systemctl stop $service_file
