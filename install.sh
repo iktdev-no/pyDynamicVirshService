@@ -180,14 +180,24 @@ setup() {
     rm "/etc/systemd/system/$service_file"
     systemctl daemon-reload
 
-    echo "Creating DRU Service runner"
+    echo "Creating Service runner"
     cat > "$install_location/service.py" <<EOL
-import signal
+import signal, logging
 from DynamicVirshService import DynamicVirshService
+logging.basicConfig(level=logging.INFO)
+
+def __stop(self, sig, _):
+    logging.info(f"Signal {sig} received. Cleaning up and exiting gracefully...")
+    self.stop()
+    exit(0)
+
 config = "${install_location}/config.json"
 service = DynamicVirshService(config)
 service.start()
-signal.signal(signal.SIGINT, lambda sig, frame: service.stop())
+signal.signal(signal.SIGINT, __stop)
+
+logging.info("Service running. Press Ctrl+C to stop.")
+signal.pause()
 EOL
 
 
