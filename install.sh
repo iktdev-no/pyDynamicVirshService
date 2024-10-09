@@ -142,7 +142,7 @@ generate_json_config() {
 
     json_output=$(jq -n \
         --arg mqtt_host "$MQTT_HOST" \
-        --arg mqtt_port "$MQTT_PORT" \
+        --argjson mqtt_port $MQTT_PORT \
         --arg mqtt_username "$MQTT_USERNAME" \
         --arg mqtt_password "$MQTT_PASSWORD" \
         --arg qemu_address "$QEMU_ADDRESS" \
