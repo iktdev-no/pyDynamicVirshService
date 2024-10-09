@@ -45,7 +45,7 @@ class DynamicVirshService:
         self.qemu_excluded_vms = qemuConfig.get("excluded_vms", [])
 
         self.mqttClient = mqtt.Client(client_id=self.mqtt_brooker, protocol=mqtt.MQTTv311, transport="tcp", callback_api_version=mqtt.CallbackAPIVersion.VERSION1)
-        self.virshClient = VirshClient(self.__virsh_state_update)
+        self.virshClient = VirshClient(self.qemu_address, self.__virsh_state_update)
 
     def is_not_in_exclusion_list(self, name: str) -> bool:
         if (name.lower() not in (excl.lower() for excl in self.qemu_excluded_vms)):
