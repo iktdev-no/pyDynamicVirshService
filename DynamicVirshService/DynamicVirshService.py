@@ -11,7 +11,7 @@ import libvirt
 from libvirt import virConnect, virDomain
 from .virshClient import VirshClient, VirshVM, VMStates
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 class DynamicVirshService:
     qemu_address: str
@@ -113,7 +113,10 @@ class DynamicVirshService:
         topic_parts = msg.topic.split("/")
         
         topic_end = topic_parts[-1]
-        logging.info(f"Suffix ending: {topic_end} from {msg.topic}")
+        if (topic_end == "set"):
+            logging.debug(f"Accepted: {topic_end} from {msg.topic}")
+        else:
+            logging.debug(f"Ignored: {topic_end} from {msg.topic}")
         
         if len(topic_parts) >= 5 and topic_end == "set":  # Sjekk at vi har nok deler
             vm_name = topic_parts[3]  # Juster indeksen basert på strukturen i topic
