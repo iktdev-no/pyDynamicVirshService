@@ -46,7 +46,20 @@ class DynamicVirshService:
         logging.info(f"VMs in exclusion list are: {",".join(self.qemu_excluded_vms)}")
 
         self.mqttClient = mqtt.Client(client_id=self.mqtt_brooker, protocol=mqtt.MQTTv311, transport="tcp", callback_api_version=mqtt.CallbackAPIVersion.VERSION1)
-        self.virshClient = VirshClient(self.qemu_address, self.__virsh_state_update)
+        self.__connect_to_virsh()
+        
+    def __connect_to_virsh(self) -> None:
+        if (self.virshClient == None):
+            logging.info("Opening a connction to Libvirt/QEMU")
+            self.virshClient = VirshClient(self.qemu_address, self.__virsh_state_update)    
+        else:
+            try:
+                self.virshClient.client.close()
+            except Exception as e:
+                logging.info("Libvirt/QEMU connection was already closed of failed")
+            logging.info("Re-opening a connection to Libvirt/QEMU")
+            self.virshClient = VirshClient(self.qemu_address, self.__virsh_state_update)
+        
 
     def is_excluded(self, name: str) -> bool:
         for excludedName in self.qemu_excluded_vms:
@@ -123,7 +136,12 @@ class DynamicVirshService:
             action = msg.payload.decode()  # Anta at meldingen er en enkel kommando
             logging.debug(f"VM Name: {vm_name} -> Action: {action}")
             virshCommand = VirshCommand(self.virshClient, vm_name, action)
-            virshCommand.execute()
+            try:
+                virshCommand.execute()
+            except Exception as e:
+                logging.error("An error occured while trying to executa a virsh command!")
+                logging.exception(e)
+                self.__connect_to_virsh()
 
 
 
@@ -160,48 +178,36 @@ class VirshCommand():
     def __stop_vm(self) -> None:
         domain = self.__get_domain()
         state, _ = domain.state()
-        try:
-            if (state == libvirt.VIR_DOMAIN_SHUTOFF):
-                logging.error(f"Can't stop a VM ({self.name}) that's shut off.")
-                return
-            domain.shutdown()            
-        except Exception as e:
-            logging.exception(e)    
+        if (state == libvirt.VIR_DOMAIN_SHUTOFF):
+            logging.error(f"Can't stop a VM ({self.name}) that's shut off.")
+            return
+        domain.shutdown()
     
     def __shutdown_vm(self) -> None:
         domain = self.__get_domain()
         state, _ = domain.state()
-        try:
-            if (state == libvirt.VIR_DOMAIN_SHUTOFF):
-                logging.error(f"Can't shut down a VM ({self.name}) that's shut off.")
-                return
-            domain.destroyFlags(libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)            
-        except Exception as e:
-            logging.exception(e)
-                
+        if (state == libvirt.VIR_DOMAIN_SHUTOFF):
+            logging.error(f"Can't shut down a VM ({self.name}) that's shut off.")
+            return
+        domain.destroyFlags(libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
+    
     def __pause_vm(self) -> None:
         domain = self.__get_domain()
         state, _ = domain.state()
-        try:
-            if (state == libvirt.VIR_DOMAIN_SHUTOFF):
-                logging.error(f"Can't pause a VM ({self.name}) that's shut off.")
-                return
-            domain.suspend()    
-        except Exception as e:
-            logging.exception(e)
-            
+        if (state == libvirt.VIR_DOMAIN_SHUTOFF):
+            logging.error(f"Can't pause a VM ({self.name}) that's shut off.")
+            return
+        domain.suspend()    
+    
     def __start_vm(self) -> None:
         domain = self.__get_domain()
         state, _ = domain.state()
         
-        try:
-            if (state == libvirt.VIR_DOMAIN_PAUSED):
-                domain.resume()
-            elif (state == libvirt.VIR_DOMAIN_SHUTOFF):
-                domain.create()
-            else:
-                obtained_state = VMStates.get_state(state)
-                logging.error(f"Unsupported action play/resume on VM {self.name} on current state {obtained_state}")
-                return
-        except Exception as e:
-            logging.exception(e)
+        if (state == libvirt.VIR_DOMAIN_PAUSED):
+            domain.resume()
+        elif (state == libvirt.VIR_DOMAIN_SHUTOFF):
+            domain.create()
+        else:
+            obtained_state = VMStates.get_state(state)
+            logging.error(f"Unsupported action play/resume on VM {self.name} on current state {obtained_state}")
+            return

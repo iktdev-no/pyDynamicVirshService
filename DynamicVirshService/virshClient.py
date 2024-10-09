@@ -37,7 +37,7 @@ class VirshVM:
     
 
 class VirshClient:
-    client: virConnect
+    client: virConnect | None = None
     qemu_address: str
     event_callback: None | Callable
     stopFlag = threading.Event()
