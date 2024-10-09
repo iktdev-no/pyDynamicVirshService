@@ -24,7 +24,7 @@ class DynamicVirshService:
     mqtt_brooker_port: int
     
     mqttClient: mqtt.Client
-    virshClient: VirshClient | None = None
+    virshClient: VirshClient | None
     mqtt_thread_stopFlag = threading.Event()
     mqtt_thread: Thread
 
@@ -32,6 +32,7 @@ class DynamicVirshService:
     __vms_pushed: List[str] = []
 
     def __init__(self, configFile: str) -> None:
+        self.virshClient = None
         logging.info(f"Version: {__version__}")
         config: dict = json.load(open(configFile))
         mqttConfig: dict = config["mqtt"]
@@ -49,17 +50,17 @@ class DynamicVirshService:
         self.__connect_to_virsh()
         
     def __connect_to_virsh(self) -> None:
-        if (self.virshClient == None):
-            logging.info("Opening a connction to Libvirt/QEMU")
+        if self.virshClient is None:
+            logging.info("Opening a connection to Libvirt/QEMU")
             self.virshClient = VirshClient(self.qemu_address, self.__virsh_state_update)    
         else:
             try:
                 self.virshClient.client.close()
             except Exception as e:
-                logging.info("Libvirt/QEMU connection was already closed of failed")
+                logging.info("Libvirt/QEMU connection was already closed or failed")
             logging.info("Re-opening a connection to Libvirt/QEMU")
             self.virshClient = VirshClient(self.qemu_address, self.__virsh_state_update)
-        
+
 
     def is_excluded(self, name: str) -> bool:
         for excludedName in self.qemu_excluded_vms:
