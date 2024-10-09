@@ -14,6 +14,7 @@ setup(
     packages=["DynamicVirshService"],
     install_requires=[
         "libvirt-python>=10.0.0",
+        "paho-mqtt>=2.1.0"
     ],
     version=version.__version__,
     description="""
