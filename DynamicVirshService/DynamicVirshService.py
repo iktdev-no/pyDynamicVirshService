@@ -160,36 +160,48 @@ class VirshCommand():
     def __stop_vm(self) -> None:
         domain = self.__get_domain()
         state, _ = domain.state()
-        if (state == libvirt.VIR_DOMAIN_SHUTOFF):
-            logging.error(f"Can't stop a VM ({self.name}) that's shut off.")
-            return
-        domain.shutdown()
+        try:
+            if (state == libvirt.VIR_DOMAIN_SHUTOFF):
+                logging.error(f"Can't stop a VM ({self.name}) that's shut off.")
+                return
+            domain.shutdown()            
+        except Exception as e:
+            logging.exception(e)    
     
     def __shutdown_vm(self) -> None:
         domain = self.__get_domain()
         state, _ = domain.state()
-        if (state == libvirt.VIR_DOMAIN_SHUTOFF):
-            logging.error(f"Can't shut down a VM ({self.name}) that's shut off.")
-            return
-        domain.destroyFlags(libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
-    
+        try:
+            if (state == libvirt.VIR_DOMAIN_SHUTOFF):
+                logging.error(f"Can't shut down a VM ({self.name}) that's shut off.")
+                return
+            domain.destroyFlags(libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)            
+        except Exception as e:
+            logging.exception(e)
+                
     def __pause_vm(self) -> None:
         domain = self.__get_domain()
         state, _ = domain.state()
-        if (state == libvirt.VIR_DOMAIN_SHUTOFF):
-            logging.error(f"Can't pause a VM ({self.name}) that's shut off.")
-            return
-        domain.suspend()    
-    
+        try:
+            if (state == libvirt.VIR_DOMAIN_SHUTOFF):
+                logging.error(f"Can't pause a VM ({self.name}) that's shut off.")
+                return
+            domain.suspend()    
+        except Exception as e:
+            logging.exception(e)
+            
     def __start_vm(self) -> None:
         domain = self.__get_domain()
         state, _ = domain.state()
         
-        if (state == libvirt.VIR_DOMAIN_PAUSED):
-            domain.resume()
-        elif (state == libvirt.VIR_DOMAIN_SHUTOFF):
-            domain.create()
-        else:
-            obtained_state = VMStates.get_state(state)
-            logging.error(f"Unsupported action play/resume on VM {self.name} on current state {obtained_state}")
-            return
+        try:
+            if (state == libvirt.VIR_DOMAIN_PAUSED):
+                domain.resume()
+            elif (state == libvirt.VIR_DOMAIN_SHUTOFF):
+                domain.create()
+            else:
+                obtained_state = VMStates.get_state(state)
+                logging.error(f"Unsupported action play/resume on VM {self.name} on current state {obtained_state}")
+                return
+        except Exception as e:
+            logging.exception(e)
