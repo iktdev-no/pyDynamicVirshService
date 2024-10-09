@@ -106,7 +106,7 @@ prerequisites() {
     source "$install_location/venv/bin/activate"
 
 
-    pip install $package_name -U
+    pip install $package_name -U --no-cache-dir --upgrade-strategy eager
 
     if [ $? -eq 0 ]; then
         # Sjekk om versjonsnummeret har endret seg
