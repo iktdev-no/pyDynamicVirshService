@@ -1,5 +1,5 @@
 
-install_location="/usr/local/dynamic-virsh-service/"
+install_location="/usr/local/dynamic-virsh-service"
 service_name="dynamic-virsh-service"
 service_file="$service_name.service"
 package_name="pyDynamicVirshService"
@@ -196,7 +196,7 @@ Description=Dynamic Virsh Service
 [Service]
 Type=simple
 Restart=always
-ExecStart=${install_location}venv/bin/python -u ${install_location}service.py
+ExecStart=${install_location}venv/bin/python -u ${install_location}/service.py
 Environment=PYTHONUNBUFFERED=1
 
 [Install]
