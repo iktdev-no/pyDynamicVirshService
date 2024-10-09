@@ -187,7 +187,7 @@ from DynamicVirshService import DynamicVirshService
 config = "${install_location}/config.json"
 service = DynamicVirshService(config)
 service.start()
-signal.signal(signal.SIGINT, service.stop())
+signal.signal(signal.SIGINT, lambda sig, frame: service.stop())
 EOL
 
 
