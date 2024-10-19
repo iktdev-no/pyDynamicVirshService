@@ -1,7 +1,8 @@
-import logging, json
+import logging, json, asyncio
 from enum import Enum
 from typing import List, Optional
 import paho.mqtt.client as mqtt
+from paho.mqtt.client import MQTTMessageInfo
 import threading
 from threading import Thread
 from .version import __version__
@@ -112,15 +113,29 @@ class DynamicVirshService:
             self.mqtt_publish(vmInfo.name, "status", vmInfo.state)
             self.mqtt_publish(vmInfo.name, "running", "true" if vmInfo.state != "shut off" else "false")
             
-    def __listen_to_mqtt(self) -> None:
+    async def __listen_to_mqtt(self) -> None:
         topic = "homeassistant/button/virsh/#"
         logging.info(f"MQTT Starting listening to topic: {topic}")
         self.mqttClient.subscribe(topic)
         self.mqttClient.on_message = self.__on_mqtt_message
-        
+        self.mqttClient.on_connect = self.__on_mqtt_connect
+        self.mqttClient.on_disconnect = self.__on_mqtt_disconnect
         while not self.mqtt_thread_stopFlag.is_set():
             self.mqttClient.loop(timeout=1)  # Kjør loop med timeout
         logging.info("MQTT Thread stopped")
+    
+    def __on_mqtt_connect(client, userdata, flags, rc):
+        if (rc == 0):
+            logging.info("MQTT Connected to server")
+        else:
+            logging.error("MQTT Failed to connect to server..")
+        pass
+    
+    def __on_mqtt_disconnect(client, userdata, rc):
+        if (rc != 0):
+            logging.error(f"MQTT Connection were unexpected closed: {rc}")
+        else:
+            logging.info("MQTT Connection was closed")
     
     def __on_mqtt_message(self, client, userdata, msg) -> None:
         # Hent vm_name fra topic
@@ -148,7 +163,17 @@ class DynamicVirshService:
 
 
     def mqtt_publish(self, name: str, subject: str, value: any) -> None:
-        self.mqttClient.publish(f"virsh/vm/{name}/{subject}", value, retain=True)
+        result = self.mqttClient.publish(f"virsh/vm/{name}/{subject}", value, retain=True)
+        publish_thread = threading.Thread(target=self.__on_mqtt_publish_executed, args=(result,))
+        publish_thread.start()
+
+    def __on_mqtt_publish_executed(self, result: MQTTMessageInfo):
+        try:
+            result.wait_for_publish(timeout=30)  # Blokkerende med timeout
+            logging.info("MQTT publish successful")
+        except Exception as e:
+            logging.error("Failed to publish message to MQTT")
+            logging.exception(e)
 
 class VirshCommand():
     virshClient: VirshClient

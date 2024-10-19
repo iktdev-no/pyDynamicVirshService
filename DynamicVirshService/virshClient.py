@@ -4,6 +4,7 @@ from libvirt import virConnect, virDomain
 import threading
 import json
 import logging
+import asyncio
 
 
 class VMStates:
