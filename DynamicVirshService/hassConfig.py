@@ -95,7 +95,7 @@ class HassConfig:
                 {
                     "payload_available": "false",
                     "payload_not_available": "true",
-                    "value_template": "{{ value not in ['suspend'] }}",
+                    "value_template": "{{ value not in ['shutdown', 'suspend'] }}",
                     "topic": status_topic
                 }
             ],
