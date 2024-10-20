@@ -65,14 +65,14 @@ class MqttClient:
             self.mqttClient.loop(timeout=1)  # Kjør loop med timeout
         logging.info("MQTT Thread stopped")    
         
-    def __on_mqtt_connect(client, userdata, flags, rc):
+    def __on_mqtt_connect(self, client, userdata, flags, rc):
         if (rc == 0):
             logging.info("MQTT Connected to server")
         else:
             logging.error("MQTT Failed to connect to server..")
         pass
     
-    def __on_mqtt_disconnect(client, userdata, rc):
+    def __on_mqtt_disconnect(self, client, userdata, rc):
         if (rc != 0):
             logging.error(f"MQTT Connection were unexpected closed: {rc}")
         else:
