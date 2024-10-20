@@ -18,12 +18,12 @@ class MqttClient:
     brooker: str
     brooker_port: int
     
-    mqttClient: mqtt.Client | None
+    mqttClient: mqtt.Client | None = None
     
     mqtt_thread_stopFlag = threading.Event()
     mqtt_thread: Thread
     
-    event_callback: None | Callable
+    event_callback: None | Callable = None
     
     def __init__(self, brooker: str, port: int, username: str, password: str, event_callback: None | Callable = None) -> None:
         self.brooker = brooker
