@@ -97,13 +97,13 @@ class MqttClient:
             else:
                 logging.warning("event_callback is undefined, thus events received will be lost..")
 
-
-    def publish(self, topic: str | None, name: str, subject: str, value: any, callback: Callback | None) -> None:
-        result: MQTTMessageInfo | None
-        if (topic == None):
-            result = self.mqttClient.publish(f"virsh/vm/{name}/{subject}", value, retain=True)
-        else:
-            result = self.mqttClient.publish()
+    def publish(self, topic: str, value: any):
+        result = self.mqttClient.publish(topic=topic, payload=value, retain=True)
+        pass
+    
+    def publish_vm_subject(self, name: str, subject: str, value: any, callback: Callback | None = None) -> None:
+        result: MQTTMessageInfo = self.mqttClient.publish(f"virsh/vm/{name}/{subject}", value, retain=True)
+        
         publish_thread = threading.Thread(target=self.__on_mqtt_publish_executed, args=(name, subject, value, result, callback))
         publish_thread.start()
 

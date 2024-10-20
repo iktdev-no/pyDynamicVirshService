@@ -23,7 +23,7 @@ class HassConfig:
     
     def publish_sensor_config(self, name: str, sensor_name: str, subject: str) -> None:
         data = json.dumps(self.__vm_status_to_homeassistant_config(name=name, sensor_name=sensor_name, subject=subject))
-        self.mqttClient.publish(topic="homeassistant/sensor/virsh/", name=f"{name.lower()}_{subject.lower()}", subject="config", value=data)
+        self.mqttClient.publish(topic=f"homeassistant/sensor/virsh/{name.lower()}_{subject.lower()}/config", value=data)
     
     def publish_binary_sensor_config(self, name: str, sensor_name: str, subject: str) -> None:
         config = self.__vm_status_to_homeassistant_config(name=name, sensor_name=sensor_name, subject=subject)
@@ -35,7 +35,7 @@ class HassConfig:
         
         # Publiser konfigurasjonen til Home Assistant
         data = json.dumps(config)
-        self.mqttClient.publish(topic="homeassistant/binary_sensor/virsh/", name=f"{name.lower()}_{subject.lower()}", subject="config", value=data)
+        self.mqttClient.publish(topic=f"homeassistant/binary_sensor/virsh/{name.lower()}_{subject.lower()}/config", value=data)
         self.__publish_button_config(name=name)
     
     def __publish_button_config(self, name: str) -> None:

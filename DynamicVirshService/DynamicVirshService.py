@@ -88,7 +88,7 @@ class DynamicVirshService:
         
         any_vm_running = any(vm.state != "shut off" for vm in self.virshClient.get_vms())
         disable_actions = False if self.qemu_allow_simultaneous_vms else any_vm_running
-        self.mqttClient.mqttClient.publish(f"virsh/vm/actions_disabled", disable_actions, retain=True) 
+        self.mqttClient.publish(f"virsh/vm/actions_disabled", disable_actions, retain=True) 
 
         if (self.is_excluded(vmInfo.name) == False):
             if (vmInfo.name not in self.__vms_pushed):
@@ -97,9 +97,9 @@ class DynamicVirshService:
                 hassConfig.publish_binary_sensor_config(name=vmInfo.name, sensor_name=f"{vmInfo.name} Running", subject="running")
                 self.__vms_pushed.append(vmInfo.name)
                 
-            self.mqttClient.publish(name = vmInfo.name, subject = "status", value = vmInfo.state)
+            self.mqttClient.publish_vm_subject(name = vmInfo.name, subject = "status", value = vmInfo.state)
             publish_value = "true" if vmInfo.state != "shut off" else "false"
-            self.mqttClient.publish(name=vmInfo.name, subject="running", value=publish_value)
+            self.mqttClient.publish_vm_subject(name=vmInfo.name, subject="running", value=publish_value)
             
     def __on_mqtt_action_received(self, vm_name, vm_action) -> None:
         virshCommand = VirshCommand(self.virshClient, self.mqttClient, vm_name, vm_action)
@@ -109,7 +109,7 @@ class DynamicVirshService:
             logging.error("An error occured while trying to executa a virsh command!")
             logging.exception(e)
             self.__connect_to_virsh()
-            self.mqttClient.publish(name=vm_name, subject="status", value="failed")
+            self.mqttClient.publish_vm_subject(name=vm_name, subject="status", value="failed")
 
 
 
@@ -149,7 +149,7 @@ class VirshCommand():
             logging.error(f"Can't stop a VM ({self.name}) that's shut off.")
             return
         domain.shutdown()
-        self.mqttClient.publish(name=self.name, subject="status", value="processing stop") 
+        self.mqttClient.publish_vm_subject(name=self.name, subject="status", value="processing stop") 
     
     def __shutdown_vm(self) -> None:
         domain = self.__get_domain()
@@ -166,7 +166,7 @@ class VirshCommand():
             logging.error(f"Can't pause a VM ({self.name}) that's shut off.")
             return
         domain.suspend()   
-        self.mqttClient.publish(name=self.name, subject="status", value="processing pause") 
+        self.mqttClient.publish_vm_subject(name=self.name, subject="status", value="processing pause") 
     
     def __start_vm(self) -> None:
         domain = self.__get_domain()
@@ -180,5 +180,5 @@ class VirshCommand():
             obtained_state = VMStates.get_state(state)
             logging.error(f"Unsupported action play/resume on VM {self.name} on current state {obtained_state}")
             return
-        self.mqttClient.publish(name=self.name, subject="status", value="processing start")
+        self.mqttClient.publish_vm_subject(name=self.name, subject="status", value="processing start")
     
