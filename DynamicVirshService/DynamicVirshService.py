@@ -148,8 +148,8 @@ class VirshCommand():
         if (state == libvirt.VIR_DOMAIN_SHUTOFF):
             logging.error(f"Can't stop a VM ({self.name}) that's shut off.")
             return
-        domain.shutdown()
         self.mqttClient.publish_vm_subject(name=self.name, subject="status", value="processing stop") 
+        domain.shutdown()
     
     def __shutdown_vm(self) -> None:
         domain = self.__get_domain()
@@ -165,20 +165,21 @@ class VirshCommand():
         if (state == libvirt.VIR_DOMAIN_SHUTOFF):
             logging.error(f"Can't pause a VM ({self.name}) that's shut off.")
             return
-        domain.suspend()   
         self.mqttClient.publish_vm_subject(name=self.name, subject="status", value="processing pause") 
+        domain.suspend()   
     
     def __start_vm(self) -> None:
         domain = self.__get_domain()
         state, _ = domain.state()
         
         if (state == libvirt.VIR_DOMAIN_PAUSED):
+            self.mqttClient.publish_vm_subject(name=self.name, subject="status", value="processing resume")
             domain.resume()
         elif (state == libvirt.VIR_DOMAIN_SHUTOFF):
+            self.mqttClient.publish_vm_subject(name=self.name, subject="status", value="processing start")
             domain.create()
         else:
             obtained_state = VMStates.get_state(state)
             logging.error(f"Unsupported action play/resume on VM {self.name} on current state {obtained_state}")
             return
-        self.mqttClient.publish_vm_subject(name=self.name, subject="status", value="processing start")
     
