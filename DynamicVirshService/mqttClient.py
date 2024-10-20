@@ -25,7 +25,7 @@ class MqttClient:
     
     event_callback: None | Callable
     
-    def __init__(self, brooker: str, port: int, username: str, password: str, event_callback: None | Callable) -> None:
+    def __init__(self, brooker: str, port: int, username: str, password: str, event_callback: None | Callable = None) -> None:
         self.brooker = brooker
         self.brooker_port = port
         self.username = username
