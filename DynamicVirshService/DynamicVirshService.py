@@ -88,7 +88,7 @@ class DynamicVirshService:
         
         any_vm_running = any(vm.state != "shut off" for vm in self.virshClient.get_vms())
         disable_actions = False if self.qemu_allow_simultaneous_vms else any_vm_running
-        self.mqttClient.publish(f"virsh/vm/actions_disabled", disable_actions, retain=True) 
+        self.mqttClient.publish(f"virsh/vm/actions_disabled", disable_actions) 
 
         if (self.is_excluded(vmInfo.name) == False):
             if (vmInfo.name not in self.__vms_pushed):
