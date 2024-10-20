@@ -133,7 +133,12 @@ generate_json_config() {
 
     # QEMU Input (predefined but modifiable)
     QEMU_ADDRESS=$(whiptail --inputbox "Enter QEMU Address:" 8 39 "qemu:///system" --title "QEMU Address" 3>&1 1>&2 2>&3)
-
+    QEMU_SINGLE_VM_ALLOWED=true
+    if whiptail --title "VM Configuration" --yesno "Allow simultaneous running VM's?" 10 60 --defaultno; then
+        QEMU_SIMULTANEOUS_VM_ALLOWED=true
+    else
+        QEMU_SIMULTANEOUS_VM_ALLOWED=false
+    fi
 
 
     if whiptail --title "VM Name Filter" --yesno "Do you want to add VM Names to exclusion list?" 10 60; then
@@ -147,6 +152,7 @@ generate_json_config() {
         --arg mqtt_password "$MQTT_PASSWORD" \
         --arg qemu_address "$QEMU_ADDRESS" \
         --argjson excluded_vms "$(printf '%s\n' "${vm_name_filter[@]}" | jq -R . | jq -s .)" \
+        --arg allow_simultaneous_vms "$QEMU_SIMULTANEOUS_VM_ALLOWED" \
         '{
             "mqtt": {
                 "host": $mqtt_host,
@@ -156,7 +162,8 @@ generate_json_config() {
             },
             "qemu": {
                 "address": $qemu_address,
-                "excluded_vms": $excluded_vms
+                "excluded_vms": $excluded_vms,
+                "allow_simultaneous_vms": $allow_simultaneous_vms
             }
         }'
     )

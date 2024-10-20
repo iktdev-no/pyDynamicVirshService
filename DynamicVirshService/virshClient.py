@@ -39,12 +39,14 @@ class VirshVM:
 
 class VirshClient:
     client: virConnect | None = None
+    allow_simultaneous_vms: bool
     qemu_address: str
     event_callback: None | Callable
     stopFlag = threading.Event()
     
-    def __init__(self, qemu_address: str, event_callback=None) -> None:
+    def __init__(self, qemu_address: str, allow_simultaneous_vms: bool, event_callback=None) -> None:
         self.qemu_address = qemu_address
+        self.allow_simultaneous_vms = allow_simultaneous_vms
         self.event_callback = event_callback
         #self.client = libvirt.openReadOnly(None)
         # Registrer standard event loop før tilkobling

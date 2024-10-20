@@ -1,7 +1,8 @@
 from typing import List
-import paho.mqtt.client as mqtt
 import json
 import logging
+
+from .mqttClient import MqttClient
 
 class HassActionConfig:
     config_topic: str
@@ -12,17 +13,17 @@ class HassActionConfig:
         self.config_entity = config_entity
 
 class HassConfig:
-    mqttClient: mqtt.Client
+    mqttClient: MqttClient
     name: str
     sensor_name: str
     subject: str
     
-    def __init__(self, mqttClient: mqtt.Client) -> None:
+    def __init__(self, mqttClient: MqttClient) -> None:
         self.mqttClient = mqttClient
     
     def publish_sensor_config(self, name: str, sensor_name: str, subject: str) -> None:
         data = json.dumps(self.__vm_status_to_homeassistant_config(name=name, sensor_name=sensor_name, subject=subject))
-        self.mqttClient.publish(f"homeassistant/sensor/virsh/{name.lower()}_{subject.lower()}/config", data, retain=True)
+        self.mqttClient.publish(topic="homeassistant/sensor/virsh/", name=f"{name.lower()}_{subject.lower()}", subject="config", value=data)
     
     def publish_binary_sensor_config(self, name: str, sensor_name: str, subject: str) -> None:
         config = self.__vm_status_to_homeassistant_config(name=name, sensor_name=sensor_name, subject=subject)
@@ -34,15 +35,16 @@ class HassConfig:
         
         # Publiser konfigurasjonen til Home Assistant
         data = json.dumps(config)
-        self.mqttClient.publish(f"homeassistant/binary_sensor/virsh/{name.lower()}_{subject.lower()}/config", data, retain=True)
+        self.mqttClient.publish(topic="homeassistant/binary_sensor/virsh/", name=f"{name.lower()}_{subject.lower()}", subject="config", value=data)
         self.__publish_button_config(name=name)
     
     def __publish_button_config(self, name: str) -> None:
         running_availability_topic = f"virsh/vm/{name}/running"
         status_availability_topic = f"virsh/vm/{name}/status"
+        disabled_actions_availability_topic = "virsh/vm/actions_disabled"
         
         button_entity: List[HassActionConfig] = [
-            self.__create_vm_start_button(vm_name=name, running_topic=running_availability_topic, status_topic=status_availability_topic),
+            self.__create_vm_start_button(vm_name=name, running_topic=running_availability_topic, status_topic=status_availability_topic, disabled_topic=disabled_actions_availability_topic),
             self.__create_vm_pause_button(vm_name=name, running_topic=running_availability_topic, status_topic=status_availability_topic),
             self.__create_vm_stop_button(vm_name=name, running_topic=running_availability_topic, status_topic=status_availability_topic),
             self.__create_vm_force_stop_buttom(vm_name=name, running_topic=running_availability_topic, status_topic=status_availability_topic)
@@ -53,7 +55,7 @@ class HassConfig:
             logging.debug(f"Configuring button for topic {cf.config_topic}\n{jd}")
             self.mqttClient.publish(cf.config_topic, jd, retain=True)
         
-    def __create_vm_start_button(self, vm_name: str, running_topic: str, status_topic: str) -> HassActionConfig:
+    def __create_vm_start_button(self, vm_name: str, running_topic: str, status_topic: str, disabled_topic: str) -> HassActionConfig:
         icon = "mdi:play"
         title = "Play"
         action = "play"
@@ -63,12 +65,18 @@ class HassConfig:
             "icon": icon,  # Add icon to the configuration
             "unique_id": f"vm_{vm_name.lower()}_button_{action}",
             "payload_press": action,
+            "availability_mode": "all",
             "availability": [
                 {
                     "payload_available": "True",
                     "payload_not_available": "False",
-                    "value_template": "{{ value not in ['shutdown', 'running'] }}",
+                    "value_template": "{{ value not in ['shutdown', 'running', 'processing start'] }}",
                     "topic": status_topic
+                },
+                {
+                    "payload_available": "False",
+                    "payload_not_available": "True",
+                    "topic": disabled_topic
                 }
             ],
             "command_topic": f"homeassistant/button/virsh/{vm_name}/{action}/set",
@@ -95,7 +103,7 @@ class HassConfig:
                 {
                     "payload_available": "false",
                     "payload_not_available": "true",
-                    "value_template": "{{ value not in ['shutdown', 'suspend', 'paused'] }}",
+                    "value_template": "{{ value not in ['shutdown', 'suspend', 'paused', 'processing pause'] }}",
                     "topic": status_topic
                 }
             ],
@@ -123,7 +131,7 @@ class HassConfig:
                 {
                     "payload_available": "false",
                     "payload_not_available": "true",
-                    "value_template": "{{ value not in ['shutdown'] }}",
+                    "value_template": "{{ value not in ['shutdown', 'processing stop'] }}",
                     "topic": status_topic
                 }
             ],
