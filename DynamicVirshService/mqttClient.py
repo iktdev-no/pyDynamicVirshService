@@ -18,7 +18,7 @@ class MqttClient:
     brooker: str
     brooker_port: int
     
-    mqttClient: mqtt.Client
+    mqttClient: mqtt.Client | None
     
     mqtt_thread_stopFlag = threading.Event()
     mqtt_thread: Thread
@@ -39,7 +39,7 @@ class MqttClient:
         self.event_callback = event_callback
         
     def start(self) -> None:
-        if (self.mqttClient.is_connected()):
+        if (self.mqttClient != None and self.mqttClient.is_connected()):
             self.mqttClient.disconnect()
         if (self.mqttClient is not None):
             self.mqttClient = None
