@@ -53,7 +53,7 @@ class HassConfig:
         for cf in button_entity:
             jd = json.dumps(cf.config_entity)
             logging.debug(f"Configuring button for topic {cf.config_topic}\n{jd}")
-            self.mqttClient.publish(cf.config_topic, jd, retain=True)
+            self.mqttClient.publish(cf.config_topic, jd)
         
     def __create_vm_start_button(self, vm_name: str, running_topic: str, status_topic: str, disabled_topic: str) -> HassActionConfig:
         icon = "mdi:play"
